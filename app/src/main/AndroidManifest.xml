@@ -6,6 +6,8 @@
     <!-- Desde Android 13 mostrar notificaciones es un permiso que el usuario concede en tiempo de ejecución. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
     <!--
       allowBackup="false": la sesión no debe viajar en un respaldo. Un respaldo
       se restaura en OTRO teléfono, con OTRO Keystore, y ahí el token cifrado es
