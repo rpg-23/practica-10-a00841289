@@ -12,6 +12,9 @@ import mx.tec.avisos.ui.screens.AvisosScreen
 import mx.tec.avisos.ui.screens.PublicarScreen
 import mx.tec.avisos.ui.state.AvisosViewModel
 import mx.tec.avisos.ui.state.PublicarViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 
 /** Las pantallas que existen SOLO con sesión. Recibe la sesión ya resuelta: aquí nunca es null. */
 @Composable
@@ -45,6 +48,11 @@ fun AvisosNavHost(sesion: Sesion, onSalir: () -> Unit) {
 
         composable(Route.PUBLICAR) {
             val viewModel: PublicarViewModel = hiltViewModel()
+            // El selector de fotos del sistema: no pide permiso, porque el usuario elige
+            // y la app solo recibe esa imagen. Devuelve null si el usuario se arrepiente.
+            val galeria = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                if (uri != null) viewModel.onImagenElegida(uri)
+            }
 
             PublicarScreen(
                 uiState = viewModel.uiState,
@@ -52,6 +60,10 @@ fun AvisosNavHost(sesion: Sesion, onSalir: () -> Unit) {
                 autor = sesion.usuario,
                 onTituloChange = viewModel::onTituloChange,
                 onCuerpoChange = viewModel::onCuerpoChange,
+                onGaleria = {
+                    galeria.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+                onQuitarImagen = viewModel::quitarImagen,
                 // El popBackStack ocurre cuando el servidor aceptó, no antes.
                 onPublicar = { viewModel.publicar { nav.popBackStack() } },
                 onCancelar = { nav.popBackStack() }
