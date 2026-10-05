@@ -15,6 +15,11 @@ import mx.tec.avisos.ui.state.PublicarViewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 
 /** Las pantallas que existen SOLO con sesión. Recibe la sesión ya resuelta: aquí nunca es null. */
 @Composable
@@ -54,6 +59,16 @@ fun AvisosNavHost(sesion: Sesion, onSalir: () -> Unit) {
                 if (uri != null) viewModel.onImagenElegida(uri)
             }
 
+            // La cámara no devuelve la foto: la escribe donde se le dijo y responde true o false.
+            // Hay que recordar DÓNDE, y recordarlo aunque Android mate el proceso mientras la
+            // cámara está abierta. Por eso rememberSaveable, y no remember.
+            var fotoPendiente by rememberSaveable { mutableStateOf<Uri?>(null) }
+            val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { tomada ->
+                val uri = fotoPendiente
+                if (tomada && uri != null) viewModel.onImagenElegida(uri)
+                fotoPendiente = null
+            }
+
             PublicarScreen(
                 uiState = viewModel.uiState,
                 // Para la vista previa: el aviso sale firmado por quien tiene la sesión.
@@ -62,6 +77,11 @@ fun AvisosNavHost(sesion: Sesion, onSalir: () -> Unit) {
                 onCuerpoChange = viewModel::onCuerpoChange,
                 onGaleria = {
                     galeria.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+                onCamara = {
+                    val uri = viewModel.nuevaFoto()
+                    fotoPendiente = uri
+                    camara.launch(uri)
                 },
                 onQuitarImagen = viewModel::quitarImagen,
                 // El popBackStack ocurre cuando el servidor aceptó, no antes.
